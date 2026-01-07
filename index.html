@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Vanilla JS</title>
+    <style>
+        html, body {
+            margin: 0px; overflow: hidden;
+        }
+
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script>
+        const canvas = document.querySelector("canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext("2d");
+
+        let grid = {}
+        const gridSize = 20
+        initGrid()
+
+        const stepCounter = 10
+        let counter = stepCounter
+
+        function loop() {
+            counter += 1
+            if (counter >= stepCounter) {
+                counter = 0
+                updateGrid()
+                drawGrid()
+            }
+
+            requestAnimationFrame(loop)
+        }
+        loop()
+
+        function initGrid() {
+            // Fill the grid data structure with initial random colors
+            for (let x = 0; x < canvas.width; x+= gridSize) {
+                for (let y = 0; y < canvas.height; y+= gridSize) {
+                    // Initialize randomly with either 0 or 1
+                    const color = (Math.random() > 0.5) ? 1 : 0 
+                    grid[`${x}_${y}`] = color
+                }
+            }
+        }
+
+        function updateGrid() {
+            const g = gridSize
+            let maxX = Math.round(canvas.width / g) * g
+            let maxY = Math.round(canvas.height / g) * g
+            const newGrid = {}
+
+            for (let x = 0; x < canvas.width; x+= gridSize) {
+                for (let y = 0; y < canvas.height; y+= gridSize) {
+                    let currentColor = grid[`${x}_${y}`]
+                    let leftColor = grid[`${mod(x - g, maxX)}_${y}`]
+                    let rightColor = grid[`${mod(x + g, maxX)}_${y}`]
+
+                    let topColor = grid[`${x}_${mod(y - g, maxY)}`]
+                    let bottomColor = grid[`${x}_${mod(y + g, maxY)}`]
+
+                    let topRight = grid[`${mod(x + g, maxX)}_${mod(y - g, maxY)}`]
+                    let topLeft = grid[`${mod(x - g, maxX)}_${mod(y - g, maxY)}`]
+                    let bottomRight = grid[`${mod(x + g, maxX)}_${mod(y + g, maxY)}`]
+                    let bottomLeft = grid[`${mod(x - g, maxX)}_${mod(y + g, maxY)}`]
+
+                    // Count live neighbors (assuming 1 = alive, 0 = dead)
+                    const neighbors = [
+                        leftColor, rightColor, topColor, bottomColor,
+                        topRight, topLeft, bottomRight, bottomLeft
+                    ]
+                    
+                    const liveNeighbors = neighbors.filter(n => n === 1).length
+                    
+                    // Apply Game of Life rules
+                    let newColor
+                    if (currentColor === 1) {
+                        // Cell is alive
+                        newColor = (liveNeighbors === 2 || liveNeighbors === 3) ? 1 : 0
+                    } else {
+                        // Cell is dead
+                        newColor = (liveNeighbors === 3) ? 1 : 0
+                    }
+                    
+                    newGrid[`${x}_${y}`] = newColor
+                }
+            }
+
+            grid = newGrid
+        }
+
+        function drawGrid() {
+            // draw whatever is currently stored in the grid variable
+            for (let x = 0; x < canvas.width; x+= gridSize) {
+                for (let y = 0; y < canvas.height; y+= gridSize) {
+                    const color = grid[`${x}_${y}`]
+                    ctx.fillStyle = `hsl(${color * 100}, 70%, 60%)`;
+                    ctx.fillRect(x, y, gridSize, gridSize);
+                }
+            }
+        }
+
+        function mod(n, m) {
+            return ((n % m) + m) % m;
+        }
+    </script>
+</body>
+</html>
